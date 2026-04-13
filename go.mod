@@ -1,3 +1,3 @@
-module github.com/kiffcom/okiff-sdk-go
+module github.com/okiffms/okiff-sdk
 
 go 1.26
