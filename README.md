@@ -29,7 +29,7 @@ sudo pacman -S paho-mqtt-c
 ## Installation
 
 ```bash
-go get github.com/kiffcom/okiff-sdk-go
+go get https://github.com/okiffms/okiff-sdk
 ```
 
 ---
@@ -43,7 +43,7 @@ import (
     "fmt"
     "time"
 
-    okiffsdk "github.com/kiffcom/okiff-sdk-go"
+    okiffsdk "https://github.com/okiffms/okiff-sdk"
 )
 
 func main() {
