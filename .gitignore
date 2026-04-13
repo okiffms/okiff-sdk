@@ -1,0 +1,4 @@
+build_tmp/
+okiff_sdk_capi.cpp
+*.test
+*.out
