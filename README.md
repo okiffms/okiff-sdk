@@ -15,6 +15,9 @@ Built as a precompiled static library with CGo bindings for performance and ease
 Install on Debian/Ubuntu:
 
 ```bash
+sudo apt install libpaho-mqtt-dev
+```
+```bash
 sudo apt install libpaho-mqtt3c-dev
 ```
 
