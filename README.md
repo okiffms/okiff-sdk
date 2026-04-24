@@ -1,4 +1,4 @@
-# okiff-sdk-go
+# okiff-sdk
 
 Go SDK for connecting to and communicating over MQTT brokers.
 Built as a precompiled static library with CGo bindings for performance and ease of deployment.
@@ -7,32 +7,31 @@ Built as a precompiled static library with CGo bindings for performance and ease
 
 ## Requirements
 
-- Go 1.21 or later
+- Go 1.23 or later
 - Linux x86-64
-- GCC / G++ (CGo build toolchain)
+- GCC (CGo build toolchain)
 - `libpaho-mqtt3c` installed system-wide
 
 Install on Debian/Ubuntu:
 
 ```bash
-sudo apt install libpaho-mqtt-dev
-```
-```bash
-sudo apt install libpaho-mqtt3c-dev
+sudo apt install gcc libpaho-mqtt3c-dev
 ```
 
 Install on Manjaro/Arch:
 
 ```bash
-sudo pacman -S paho-mqtt-c
+sudo pacman -S gcc paho-mqtt-c
 ```
 
 ---
 
 ## Installation
 
+Inside an existing Go module:
+
 ```bash
-go get github.com/okiffms/okiff-sdk
+go get github.com/okiffms/okiff-sdk@latest
 ```
 
 ---
@@ -77,6 +76,7 @@ func main() {
     ok := sdk.Connect()
     fmt.Println("Connect() =>", ok)
 
+    // Publish and subscribe
     if ok {
         sdk.Subscribe("my/topic", 0)
         time.AfterFunc(500*time.Millisecond, func() {
@@ -90,6 +90,38 @@ func main() {
     sdk.Stop()
 }
 ```
+
+## Paho Compatibility
+
+If your application expects `github.com/eclipse/paho.mqtt.golang`.Client,
+use the compatibility adapter instead of passing `*SDK` directly:
+
+```go
+package main
+
+import (
+    mqtt "github.com/eclipse/paho.mqtt.golang"
+    okiffsdk "github.com/okiffms/okiff-sdk"
+)
+
+func main() {
+    client, err := okiffsdk.Init(
+        "my_client",
+        "broker.example.com:1883",
+        "tcp",
+        "username",
+        "password",
+    )
+    if err != nil {
+        panic(err)
+    }
+
+    var mqttClient mqtt.Client = client
+    _ = mqttClient
+}
+```
+
+If you already have an initialized `*SDK`, wrap it with `sdk.AsPahoClient()`.
 
 ---
 
@@ -113,7 +145,7 @@ Initializes the SDK. Must be called before `Connect`.
 | `username` | `string` | Authentication username |
 | `password` | `string` | Authentication password |
 
-**Returns:** `error` if the internal client cannot be created, `nil` on success.
+**Returns:** `nil` on success, `error` if the internal client cannot be created.
 
 ---
 
@@ -135,12 +167,12 @@ Gracefully disconnects from the broker.
 
 Publishes a message to a topic.
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `topic` | `string` | required | MQTT topic string |
-| `payload` | `string` | required | Message body |
-| `qos` | `int` | `0` | Quality of Service: `0`, `1`, or `2` |
-| `retained` | `bool` | `false` | Whether the broker retains the message |
+| Parameter | Type | Description |
+|---|---|---|
+| `topic` | `string` | MQTT topic string |
+| `payload` | `string` | Message body |
+| `qos` | `int` | Quality of Service: `0`, `1`, or `2` |
+| `retained` | `bool` | Whether the broker retains the message |
 
 ---
 
@@ -213,7 +245,12 @@ Stops all activity and releases all resources. Must be called after `Disconnect`
 
 ### `Destroy()`
 
-Frees the SDK handle. Must be called after `Stop`. Use with `defer`.
+Frees the SDK handle. Must be called after `Stop`. Idiomatic usage:
+
+```go
+sdk := okiffsdk.New()
+defer sdk.Destroy()
+```
 
 ---
 

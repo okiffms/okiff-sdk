@@ -20,16 +20,13 @@ import (
 	"unsafe"
 )
 
-
 // MessageHandler is called when a message arrives on a subscribed topic.
 type MessageHandler func(topic, payload string)
-
 
 // ConnectionHandler is called on every connection state change.
 // connected: true = connected, false = disconnected or lost.
 // rc: 0 = clean disconnect, -1 = unexpected loss.
 type ConnectionHandler func(connected bool, rc int)
-
 
 // SDK is the main client handle. Create one with New().
 type SDK struct {
@@ -38,8 +35,12 @@ type SDK struct {
 	mu                sync.Mutex
 	messageHandler    MessageHandler
 	connectionHandler ConnectionHandler
+	clientID          string
+	brokerHost        string
+	protocol          string
+	username          string
+	password          string
 }
-
 
 // registry maps raw C pointer (used as key) back to the Go SDK instance
 // so CGo callbacks can locate the correct SDK instance.
@@ -48,13 +49,11 @@ var (
 	registry   = make(map[uintptr]*SDK)
 )
 
-
 func register(s *SDK) {
 	registryMu.Lock()
 	registry[uintptr(s.handle)] = s
 	registryMu.Unlock()
 }
-
 
 func unregister(s *SDK) {
 	registryMu.Lock()
@@ -62,14 +61,12 @@ func unregister(s *SDK) {
 	registryMu.Unlock()
 }
 
-
 func lookup(handle unsafe.Pointer) *SDK {
 	registryMu.RLock()
 	s := registry[uintptr(handle)]
 	registryMu.RUnlock()
 	return s
 }
-
 
 // New allocates and returns a new SDK instance.
 func New() *SDK {
@@ -80,14 +77,13 @@ func New() *SDK {
 	return s
 }
 
-
 // Init initializes the MQTT client. Must be called before Connect.
 func (s *SDK) Init(clientId, brokerHost, protocol, username, password string) error {
-	cClientId   := C.CString(clientId)
+	cClientId := C.CString(clientId)
 	cBrokerHost := C.CString(brokerHost)
-	cProtocol   := C.CString(protocol)
-	cUsername   := C.CString(username)
-	cPassword   := C.CString(password)
+	cProtocol := C.CString(protocol)
+	cUsername := C.CString(username)
+	cPassword := C.CString(password)
 
 	defer C.free(unsafe.Pointer(cClientId))
 	defer C.free(unsafe.Pointer(cBrokerHost))
@@ -99,9 +95,17 @@ func (s *SDK) Init(clientId, brokerHost, protocol, username, password string) er
 	if rc != 0 {
 		return errors.New("okiffsdk: Init failed — internal client creation error")
 	}
+
+	s.mu.Lock()
+	s.clientID = clientId
+	s.brokerHost = brokerHost
+	s.protocol = protocol
+	s.username = username
+	s.password = password
+	s.mu.Unlock()
+
 	return nil
 }
-
 
 // Connect establishes the connection to the broker.
 // Returns true on success, false on failure.
@@ -109,12 +113,10 @@ func (s *SDK) Connect() bool {
 	return C.okiff_connect(s.handle) == 1
 }
 
-
 // Disconnect gracefully disconnects from the broker.
 func (s *SDK) Disconnect() {
 	C.okiff_disconnect(s.handle)
 }
-
 
 // Stop stops all activity and releases all resources.
 // Must be called as the final cleanup step, after Disconnect.
@@ -123,25 +125,22 @@ func (s *SDK) Stop() {
 	C.okiff_stop(s.handle)
 }
 
-
 // Destroy frees the SDK handle. Call after Stop.
 func (s *SDK) Destroy() {
 	C.okiff_destroy(s.handle)
 	s.handle = nil
 }
 
-
 // IsConnected returns the current connection state.
 func (s *SDK) IsConnected() bool {
 	return C.okiff_is_connected(s.handle) == 1
 }
 
-
 // Publish sends a message to a topic.
 // qos: 0 = at most once, 1 = at least once, 2 = exactly once.
 // retained: broker stores the message for future new subscribers.
 func (s *SDK) Publish(topic, payload string, qos int, retained bool) {
-	cTopic   := C.CString(topic)
+	cTopic := C.CString(topic)
 	cPayload := C.CString(payload)
 	defer C.free(unsafe.Pointer(cTopic))
 	defer C.free(unsafe.Pointer(cPayload))
@@ -154,7 +153,6 @@ func (s *SDK) Publish(topic, payload string, qos int, retained bool) {
 	C.okiff_publish(s.handle, cTopic, cPayload, C.int(qos), cRetained)
 }
 
-
 // Subscribe registers a subscription on the given topic.
 // Returns true on success, false on failure.
 func (s *SDK) Subscribe(topic string, qos int) bool {
@@ -163,14 +161,12 @@ func (s *SDK) Subscribe(topic string, qos int) bool {
 	return C.okiff_subscribe(s.handle, cTopic, C.int(qos)) == 1
 }
 
-
 // Unsubscribe removes a topic subscription.
 func (s *SDK) Unsubscribe(topic string) {
 	cTopic := C.CString(topic)
 	defer C.free(unsafe.Pointer(cTopic))
 	C.okiff_unsubscribe(s.handle, cTopic)
 }
-
 
 // OnMessage registers a callback invoked when a message arrives on any subscribed topic.
 // Replaces any previously registered handler.
@@ -185,7 +181,6 @@ func (s *SDK) OnMessage(h MessageHandler) {
 		unsafe.Pointer(s.handle),
 	)
 }
-
 
 // OnConnection registers a callback invoked on every connection state change.
 // Replaces any previously registered handler.
