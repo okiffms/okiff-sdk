@@ -1,4 +1,4 @@
-module github.com/kiffcom/okiff-sdk
+module github.com/okiffms/okiff-sdk
 
 go 1.24.0
 
