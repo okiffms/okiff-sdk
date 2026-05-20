@@ -25,7 +25,18 @@ int  okiff_init(OkiffHandle handle,
                 const char* brokerHost,
                 const char* protocol,
                 const char* username,
-                const char* password);
+                const char* password,
+                int cleanSession,
+                int resumeSubs,
+                int connectRetry,
+                int autoReconnect,
+                int connectRetryInterval,
+                int maxReconnectInterval,
+                int keepAlive,
+                int pingTimeout,
+                int writeTimeout,
+                int orderMatters,
+                int connectTimeout);
 
                 
 // Connection

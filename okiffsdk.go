@@ -82,7 +82,20 @@ func New() *SDK {
 }
 
 // Init initializes the MQTT client. Must be called before Connect.
-func (s *SDK) Init(clientId, brokerHost, protocol, username, password string) error {
+func (s *SDK) Init(
+	clientId, brokerHost, protocol, username, password string,
+	cleanSession bool,
+	resumeSubs bool,
+	connectRetry bool,
+	autoReconnect bool,
+	connectRetryInterval int,
+	maxReconnectInterval int,
+	keepAlive int,
+	pingTimeout int,
+	writeTimeout int,
+	orderMatters bool,
+	connectTimeout int,
+) error {
 	cClientId := C.CString(clientId)
 	cBrokerHost := C.CString(brokerHost)
 	cProtocol := C.CString(protocol)
@@ -95,7 +108,33 @@ func (s *SDK) Init(clientId, brokerHost, protocol, username, password string) er
 	defer C.free(unsafe.Pointer(cUsername))
 	defer C.free(unsafe.Pointer(cPassword))
 
-	rc := C.okiff_init(s.handle, cClientId, cBrokerHost, cProtocol, cUsername, cPassword)
+	cCleanSession := C.int(0)
+	if cleanSession {
+		cCleanSession = 1
+	}
+	cResumeSubs := C.int(0)
+	if resumeSubs {
+		cResumeSubs = 1
+	}
+	cConnectRetry := C.int(0)
+	if connectRetry {
+		cConnectRetry = 1
+	}
+	cAutoReconnect := C.int(0)
+	if autoReconnect {
+		cAutoReconnect = 1
+	}
+	cOrderMatters := C.int(0)
+	if orderMatters {
+		cOrderMatters = 1
+	}
+
+	rc := C.okiff_init(s.handle, cClientId, cBrokerHost, cProtocol, cUsername, cPassword,
+		cCleanSession, cResumeSubs, cConnectRetry, cAutoReconnect,
+		C.int(connectRetryInterval), C.int(maxReconnectInterval),
+		C.int(keepAlive), C.int(pingTimeout), C.int(writeTimeout),
+		cOrderMatters, C.int(connectTimeout),
+	)
 	if rc != 0 {
 		return errors.New("okiffsdk: Init failed — internal client creation error")
 	}
