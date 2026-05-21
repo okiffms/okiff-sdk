@@ -12,7 +12,7 @@ import (
 
 var _ mqtt.Client = (*PahoClient)(nil)
 
-// PahoClient adapts SDK to the github.com/eclipse/paho.mqtt.golang Client interface.
+// PahoClient adapts SDK to the github.com/eclipse/paho.mqtt.golang Client interface. v1.1.2
 type PahoClient struct {
 	sdk *SDK
 
