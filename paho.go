@@ -34,7 +34,7 @@ func Init(clientID, brokerHost, protocol, username, password string) (mqtt.Clien
 // NewPahoClient creates, initializes, and returns a Paho-compatible client adapter.
 func NewPahoClient(clientID, brokerHost, protocol, username, password string) (*PahoClient, error) {
 	sdk := New()
-	if err := sdk.Init(clientID, brokerHost, protocol, username, password, false, true, true, true, 5, 1, 30, 10, 10, false, 30); err != nil {
+	if err := sdk.Init(clientID, brokerHost, protocol, username, password, false, true, true, true, 5, 1, 30, 10, 10, false, 30, "Enterprise"); err != nil {
 		sdk.Destroy()
 		return nil, err
 	}
