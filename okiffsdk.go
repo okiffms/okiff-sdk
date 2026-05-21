@@ -8,7 +8,7 @@ package okiffsdk
 #cgo linux,arm64 LDFLAGS: -L${SRCDIR}/lib/linux_arm64
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin_amd64
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin_arm64
-#cgo LDFLAGS: -lokiff_sdk -lpaho-mqtt3c -lpthread -lstdc++
+#cgo LDFLAGS: -lokiff_sdk -lpaho-mqtt3c -lcjose -ljansson -lpthread -lstdc++
 #include "okiff_sdk_capi.h"
 #include <stdlib.h>
 
@@ -95,18 +95,25 @@ func (s *SDK) Init(
 	writeTimeout int,
 	orderMatters bool,
 	connectTimeout int,
+	edition string,
 ) error {
 	cClientId := C.CString(clientId)
 	cBrokerHost := C.CString(brokerHost)
 	cProtocol := C.CString(protocol)
 	cUsername := C.CString(username)
 	cPassword := C.CString(password)
+	var cEdition *C.char
+	if edition == "" {
+		edition = "Community"
+	}
+	cEdition = C.CString(edition)
 
 	defer C.free(unsafe.Pointer(cClientId))
 	defer C.free(unsafe.Pointer(cBrokerHost))
 	defer C.free(unsafe.Pointer(cProtocol))
 	defer C.free(unsafe.Pointer(cUsername))
 	defer C.free(unsafe.Pointer(cPassword))
+	defer C.free(unsafe.Pointer(cEdition))
 
 	cCleanSession := C.int(0)
 	if cleanSession {
@@ -133,7 +140,7 @@ func (s *SDK) Init(
 		cCleanSession, cResumeSubs, cConnectRetry, cAutoReconnect,
 		C.int(connectRetryInterval), C.int(maxReconnectInterval),
 		C.int(keepAlive), C.int(pingTimeout), C.int(writeTimeout),
-		cOrderMatters, C.int(connectTimeout),
+		cOrderMatters, C.int(connectTimeout), cEdition,
 	)
 	if rc != 0 {
 		return errors.New("okiffsdk: Init failed — internal client creation error")

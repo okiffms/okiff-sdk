@@ -36,7 +36,8 @@ int  okiff_init(OkiffHandle handle,
                 int pingTimeout,
                 int writeTimeout,
                 int orderMatters,
-                int connectTimeout);
+                int connectTimeout,
+                const char* edition);
 
                 
 // Connection
